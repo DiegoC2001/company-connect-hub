@@ -14,16 +14,283 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      chamadas: {
+        Row: {
+          destinatario_id: string
+          duracao_segundos: number
+          empresa_id: string
+          finalizada_em: string | null
+          id: string
+          iniciada_em: string
+          qualidade: number | null
+          remetente_id: string
+          status: Database["public"]["Enums"]["status_chamada"]
+        }
+        Insert: {
+          destinatario_id: string
+          duracao_segundos?: number
+          empresa_id: string
+          finalizada_em?: string | null
+          id?: string
+          iniciada_em?: string
+          qualidade?: number | null
+          remetente_id: string
+          status?: Database["public"]["Enums"]["status_chamada"]
+        }
+        Update: {
+          destinatario_id?: string
+          duracao_segundos?: number
+          empresa_id?: string
+          finalizada_em?: string | null
+          id?: string
+          iniciada_em?: string
+          qualidade?: number | null
+          remetente_id?: string
+          status?: Database["public"]["Enums"]["status_chamada"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chamadas_destinatario_id_fkey"
+            columns: ["destinatario_id"]
+            isOneToOne: false
+            referencedRelation: "funcionarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chamadas_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chamadas_remetente_id_fkey"
+            columns: ["remetente_id"]
+            isOneToOne: false
+            referencedRelation: "funcionarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      empresas: {
+        Row: {
+          data_criacao: string
+          dominio_email: string
+          id: string
+          nome: string
+          plano: string
+        }
+        Insert: {
+          data_criacao?: string
+          dominio_email: string
+          id?: string
+          nome: string
+          plano?: string
+        }
+        Update: {
+          data_criacao?: string
+          dominio_email?: string
+          id?: string
+          nome?: string
+          plano?: string
+        }
+        Relationships: []
+      }
+      funcionarios: {
+        Row: {
+          ativo: boolean
+          avatar_url: string | null
+          cargo: string | null
+          created_at: string
+          departamento: string | null
+          email: string
+          empresa_id: string
+          id: string
+          nome_completo: string
+          status_presenca: Database["public"]["Enums"]["status_presenca"]
+          ultimo_acesso: string | null
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          avatar_url?: string | null
+          cargo?: string | null
+          created_at?: string
+          departamento?: string | null
+          email: string
+          empresa_id: string
+          id: string
+          nome_completo: string
+          status_presenca?: Database["public"]["Enums"]["status_presenca"]
+          ultimo_acesso?: string | null
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          avatar_url?: string | null
+          cargo?: string | null
+          created_at?: string
+          departamento?: string | null
+          email?: string
+          empresa_id?: string
+          id?: string
+          nome_completo?: string
+          status_presenca?: Database["public"]["Enums"]["status_presenca"]
+          ultimo_acesso?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "funcionarios_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mensagens_chat: {
+        Row: {
+          arquivo_url: string | null
+          conteudo: string
+          data_envio: string
+          destinatario_id: string
+          empresa_id: string
+          id: string
+          lida: boolean
+          remetente_id: string
+          tipo_arquivo: string | null
+        }
+        Insert: {
+          arquivo_url?: string | null
+          conteudo: string
+          data_envio?: string
+          destinatario_id: string
+          empresa_id: string
+          id?: string
+          lida?: boolean
+          remetente_id: string
+          tipo_arquivo?: string | null
+        }
+        Update: {
+          arquivo_url?: string | null
+          conteudo?: string
+          data_envio?: string
+          destinatario_id?: string
+          empresa_id?: string
+          id?: string
+          lida?: boolean
+          remetente_id?: string
+          tipo_arquivo?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mensagens_chat_destinatario_id_fkey"
+            columns: ["destinatario_id"]
+            isOneToOne: false
+            referencedRelation: "funcionarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mensagens_chat_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mensagens_chat_remetente_id_fkey"
+            columns: ["remetente_id"]
+            isOneToOne: false
+            referencedRelation: "funcionarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      salas_reuniao: {
+        Row: {
+          ativa: boolean
+          criador_id: string
+          data_criacao: string
+          empresa_id: string
+          id: string
+          nome_sala: string
+          participantes: Json
+        }
+        Insert: {
+          ativa?: boolean
+          criador_id: string
+          data_criacao?: string
+          empresa_id: string
+          id?: string
+          nome_sala: string
+          participantes?: Json
+        }
+        Update: {
+          ativa?: boolean
+          criador_id?: string
+          data_criacao?: string
+          empresa_id?: string
+          id?: string
+          nome_sala?: string
+          participantes?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "salas_reuniao_criador_id_fkey"
+            columns: ["criador_id"]
+            isOneToOne: false
+            referencedRelation: "funcionarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salas_reuniao_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_minha_empresa: { Args: never; Returns: string }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "funcionario"
+      status_chamada: "em_andamento" | "completada" | "perdida" | "rejeitada"
+      status_presenca: "online" | "ocupado" | "ausente" | "offline"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +417,10 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "funcionario"],
+      status_chamada: ["em_andamento", "completada", "perdida", "rejeitada"],
+      status_presenca: ["online", "ocupado", "ausente", "offline"],
+    },
   },
 } as const
