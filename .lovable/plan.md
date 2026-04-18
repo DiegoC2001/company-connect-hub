@@ -2,81 +2,99 @@
 
 ## Análise
 
-Preciso construir o esqueleto do app: auth + layout autenticado com sidebar/header + rotas protegidas + RBAC para admin. Banco já está pronto (funcionarios, user_roles, has_role, get_minha_empresa).
+Construir página `/contatos` rica: tabela + filtros + ações de chamada/mensagem + diálogos + chat lateral + realtime de presença + notificações.
 
-## Arquitetura de rotas (TanStack Router)
+Atenção: backend de chamadas e Storage ainda não existe. Vou estruturar o frontend completo apenas para o que já existe no DB (mensagens_chat, funcionarios, status_presenca via realtime), e deixar chamadas como UI funcional + dialog "aguardando" sem persistir em `chamadas` ainda — porque o fluxo correto será via server functions (próximo passo). Isso evita quebrar RLS e mantém o passo coeso.
 
-```text
-src/routes/
-  __root.tsx                    (já existe — adicionar QueryClientProvider + AuthProvider)
-  index.tsx                     (redireciona / → /login ou /dashboard)
-  login.tsx                     (pública, redireciona se já autenticado)
-  forgot-password.tsx           (pública)
-  reset-password.tsx            (pública — obrigatória para fluxo de reset)
-  _authenticated.tsx            (layout: sidebar + header + Outlet, guarda beforeLoad)
-  _authenticated/
-    dashboard.tsx
-    contatos.tsx
-    chamadas.tsx
-    mensagens.tsx
-    salas.tsx
-    configuracoes.tsx
-    _admin.tsx                  (guarda extra: hasRole('admin'))
-    _admin/
-      usuarios.tsx              (Gerenciar Usuários)
+## Escopo deste passo
+
+✅ **Implementado agora:**
+1. Listagem real de `funcionarios` da empresa (excluindo o próprio usuário).
+2. Filtros: busca por nome, select de departamento (derivado dos dados), select de status, botão limpar.
+3. Tabela com avatar, nome, cargo, departamento, badge de presença, último acesso (com `date-fns` formatação relativa).
+4. Skeleton loading + empty state.
+5. Realtime de presença: subscription no canal `empresa:<empresa_id>:presenca` ouvindo `postgres_changes` em `funcionarios` (filtro por empresa_id) — atualiza a query do TanStack Query.
+6. Ações por linha: Chamada Voz, Chamada Vídeo, Mensagem. Voz/Vídeo desabilitadas se status = `offline` ou `ausente` (permitidas em `online`/`ocupado`).
+7. **CallDialog**: modal "Aguardando resposta..." com timer crescente, botão Cancelar, botão "Deixar mensagem" que fecha o dialog e abre o chat lateral. Não cria registro em `chamadas` ainda — placeholder até as server functions de chamada.
+8. **ChatSheet**: Sheet lateral com histórico de mensagens entre o usuário e o contato selecionado (query em `mensagens_chat`), input para enviar mensagem (insert real), realtime no canal `user:<auth.uid()>:mensagens` ouvindo INSERTs em `mensagens_chat` filtrados por `destinatario_id=auth.uid()` — atualiza histórico. Marca mensagens como lidas ao abrir.
+9. Toast de notificação quando chega nova mensagem com chat fechado (via mesmo canal user).
+
+⏸️ **Adiado (próximo passo de chamadas):**
+- Persistência em `chamadas` + server function `iniciar-chamada`/`finalizar-chamada`.
+- WebRTC real (vídeo/voz). Por ora o dialog é "fake call".
+- Upload de arquivo no chat (precisa criar bucket Storage com RLS — também próximo passo).
+- Indicador "digitando..." (precisa de canal broadcast separado — próximo passo junto com WebRTC).
+
+Vou deixar comentários `// TODO` claros marcando onde plugar a server function de chamada e o upload.
+
+## Arquitetura de arquivos
+
+```
+src/routes/_authenticated/contatos.tsx         (página principal)
+src/components/contatos/
+  ContatosTable.tsx                            (tabela + skeleton + empty state)
+  ContatosFilters.tsx                          (busca + selects + limpar)
+  PresencaBadge.tsx                            (badge colorido reusável)
+  CallDialog.tsx                               (modal aguardando resposta)
+  ChatSheet.tsx                                (sheet de chat 1:1)
+src/hooks/
+  useFuncionarios.ts                           (query + realtime de presença)
+  useMensagensChat.ts                          (query + realtime + send)
 ```
 
-## AuthContext
-
-`src/contexts/AuthContext.tsx` expõe:
-- `session`, `user` (auth.users), `funcionario` (linha de `funcionarios`), `empresaId`, `isAdmin`, `loading`
-- `signIn`, `signOut`, `updatePresenca(status)`
-- Fluxo correto: `onAuthStateChange` PRIMEIRO, depois `getSession()`. Buscas de `funcionarios`/`user_roles` via `setTimeout(0)` dentro do callback para evitar deadlock do Supabase.
-
-Esse contexto é injetado no router context (padrão TanStack auth-guards) para uso em `beforeLoad`.
-
-## Componentes de layout
-
-- `src/components/layout/AppSidebar.tsx` — shadcn `Sidebar` com `collapsible="icon"`. Itens fixos + item condicional "Gerenciar Usuários" se `isAdmin`. Usa `Link` do TanStack com `activeProps`.
-- `src/components/layout/AppHeader.tsx` — `SidebarTrigger`, busca placeholder, dropdown de status de presença (online/ocupado/ausente — atualiza coluna `status_presenca` em `funcionarios`), badge de notificações (placeholder por enquanto), avatar com dropdown (nome, cargo, logout).
-- `src/components/layout/AuthenticatedLayout.tsx` — usado dentro de `_authenticated.tsx`: `SidebarProvider` + sidebar + `<main>` com header + `<Outlet/>`.
-
-## Páginas iniciais (placeholders enxutos)
-
-Cada rota autenticada renderiza um cabeçalho + card vazio com descrição do que virá. Evita "página em branco" mas deixa claro que é stub. Login/forgot-password/reset-password são funcionais de verdade.
-
-## Guardas
-
-- `_authenticated.tsx`: `beforeLoad` checa `context.auth.isAuthenticated`; se não, `throw redirect({ to: '/login', search: { redirect: location.href } })`.
-- `_authenticated/_admin.tsx`: checa `context.auth.isAdmin`; se não, redireciona para `/dashboard`.
-- `login.tsx`: se já autenticado, redireciona ao destino.
-
-Como o auth do Supabase é assíncrono no client, o `AuthProvider` mostra um splash enquanto `loading=true` e só então monta o `RouterProvider` com o context populado — assim `beforeLoad` sempre vê estado coerente.
-
-## Estilo
-
-- Mantém tokens já em `src/styles.css` (slate baseColor). Acentos azul-violeta serão refinados num passo posterior — agora uso `bg-primary`/`text-primary` semânticos. Sem cores hardcoded.
-- Sidebar colapsável (icon mode) para telas menores; foco em desktop conforme pedido.
+Hooks usam **TanStack Query** (já configurado no `__root.tsx` via `QueryClientProvider`). Query keys: `['funcionarios', empresaId]`, `['mensagens', userId, contatoId]`.
 
 ## Detalhes técnicos
 
-1. Adicionar `@tanstack/react-query` (já é peer-dep do TanStack Start setup; verificar e adicionar se necessário) — usado para queries futuras de funcionarios/chamadas. Por ora, `AuthContext` usa Supabase direto.
-2. `router.tsx` passa a usar `createRootRouteWithContext<{ auth: AuthState }>()` — exige editar `__root.tsx` para usar `createRootRouteWithContext`.
-3. `src/main.tsx` (ou onde o router é montado) — embrulha `<RouterProvider>` com `<AuthProvider>` e injeta `auth` via `router.update({ context: { auth } })` no re-render do provider. Vou verificar onde `RouterProvider` é instanciado antes de implementar.
-4. Realtime de presença e notificações ficam para passos seguintes (já há políticas RLS para canais `empresa:<id>:*` e `user:<id>:*`).
-5. Reset de senha: `signUp`/`resetPasswordForEmail` usam `redirectTo: window.location.origin + '/reset-password'`.
-6. `index.tsx` atual (placeholder) será substituído por um componente que usa `Navigate` para `/dashboard` (auth) ou `/login`.
+### Realtime — convenção de canais
 
-## Pré-requisitos do usuário (importante)
+As políticas RLS de `realtime.messages` exigem prefixos `empresa:<empresa_id>:*` ou `user:<user_id>:*`. Usarei:
+- `empresa:<empresaId>:presenca` para mudanças em `funcionarios` (qualquer um da empresa).
+- `user:<userId>:mensagens` para mensagens dirigidas ao usuário atual.
 
-Para conseguir logar, é preciso ter ao menos 1 linha em `empresas` cujo `dominio_email` bata com o email do primeiro usuário (o trigger `handle_new_user` bloqueia domínios não cadastrados). Recomendo cadastrar p.ex. `acme.com` antes de criar o primeiro usuário pela tela de cadastro — ou eu posso adicionar uma rota `/signup` simples agora (não foi pedida explicitamente; aviso na entrega para você criar via SQL).
+Mas atenção: `postgres_changes` em si usa autenticação de banco (RLS da tabela alvo). O canal name só precisa passar pela política de subscribe. Vou nomear conforme as RLS criadas.
 
-## Entregáveis deste passo
+### Filtro de status no realtime
 
-1. `AuthContext` + provider
-2. Rotas: `login`, `forgot-password`, `reset-password`, `_authenticated` layout, 6 páginas autenticadas, `_admin/usuarios`
-3. Sidebar + Header + AuthenticatedLayout
-4. Atualização de `__root.tsx` e `router.tsx` para context tipado
-5. Atualização de `index.tsx` removendo placeholder
-6. Sem chamadas reais ainda em chamadas/mensagens/realtime — só estrutura
+`postgres_changes` aceita `filter: 'empresa_id=eq.<id>'` — perfeito.
+
+### date-fns
+
+Já instalado. Usar `formatDistanceToNow` com locale `ptBR`.
+
+### Status badge
+
+Cores via classes utilitárias controladas por mapa, sem hardcode em componente — usar `bg-green-500/15 text-green-600` etc. (são tokens utilitários Tailwind padrão, aceitáveis para indicadores semânticos não cobertos por design tokens). Ou criar tokens `--status-online` etc. em `styles.css`. Vou adicionar tokens semânticos para presença em `styles.css` para ficar correto.
+
+### Chat — marcar como lida
+
+Ao abrir o sheet, `update mensagens_chat set lida=true where destinatario_id=auth.uid() and remetente_id=contato.id and lida=false`.
+
+### Notificação toast de mensagem nova
+
+Subscription global montada no layout `_authenticated` (não na página) para funcionar mesmo fora de `/contatos`. Vou criar `src/hooks/useGlobalMessageNotifications.ts` e chamar dentro de `AuthenticatedLayout`.
+
+## Tokens de status no styles.css
+
+Adicionar:
+```css
+--status-online: oklch(0.7 0.18 145);
+--status-ocupado: oklch(0.6 0.22 25);
+--status-ausente: oklch(0.78 0.16 80);
+--status-offline: oklch(0.6 0.02 260);
+```
+e registrar em `@theme inline` como `--color-status-*`.
+
+## Entregáveis
+
+1. `styles.css` — tokens de status.
+2. Hooks: `useFuncionarios`, `useMensagensChat`, `useGlobalMessageNotifications`.
+3. Componentes: `PresencaBadge`, `ContatosFilters`, `ContatosTable`, `CallDialog`, `ChatSheet`.
+4. `contatos.tsx` reescrito com tudo plugado.
+5. `AuthenticatedLayout` — adiciona o hook global de notificações.
+6. Comentário `// TODO` nos pontos de integração com server functions de chamada e Storage.
+
+## Pré-requisito do usuário (lembrete)
+
+Para testar de verdade, é preciso ter ≥2 funcionários na mesma empresa (mesmo `dominio_email`). Aviso na entrega.
 
