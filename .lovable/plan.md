@@ -1,58 +1,82 @@
 
-# CommUnity — Plataforma de comunicação corporativa
 
-App tipo Slack/Teams para empresas, com chat em tempo real, chamadas de voz, presença e administração — multi-tenant isolado por empresa via domínio de email.
+## Análise
 
-## Estilo visual
-Design minimalista escuro (estilo Linear/Notion), com sidebar lateral, acentos em azul-violeta e tipografia limpa. Foco em produtividade e densidade de informação confortável.
+Preciso construir o esqueleto do app: auth + layout autenticado com sidebar/header + rotas protegidas + RBAC para admin. Banco já está pronto (funcionarios, user_roles, has_role, get_minha_empresa).
 
-## Backend (Lovable Cloud / Supabase)
+## Arquitetura de rotas (TanStack Router)
 
-**Tabelas**
-- `empresas` — id, nome, dominio_email, plano, data_criacao
-- `funcionarios` — vinculado a `auth.users`; perfil, cargo, departamento, status_presença, ativo, último_acesso
-- `user_roles` — tabela separada para roles (admin/funcionario), evitando escalonamento de privilégio
-- `chamadas` — registro de chamadas de voz (tipo fixo "voz")
-- `mensagens_chat` — mensagens 1:1 com suporte a anexos
-- `salas_reuniao` — salas de voz em grupo com participantes em jsonb
+```text
+src/routes/
+  __root.tsx                    (já existe — adicionar QueryClientProvider + AuthProvider)
+  index.tsx                     (redireciona / → /login ou /dashboard)
+  login.tsx                     (pública, redireciona se já autenticado)
+  forgot-password.tsx           (pública)
+  reset-password.tsx            (pública — obrigatória para fluxo de reset)
+  _authenticated.tsx            (layout: sidebar + header + Outlet, guarda beforeLoad)
+  _authenticated/
+    dashboard.tsx
+    contatos.tsx
+    chamadas.tsx
+    mensagens.tsx
+    salas.tsx
+    configuracoes.tsx
+    _admin.tsx                  (guarda extra: hasRole('admin'))
+    _admin/
+      usuarios.tsx              (Gerenciar Usuários)
+```
 
-**Row Level Security**
-- Função `security definer` `get_minha_empresa()` para isolar dados por empresa sem recursão
-- Função `has_role()` para verificações de admin
-- Cada tabela só permite leitura/escrita de registros da mesma empresa do usuário
-- Mensagens e chamadas: usuário só vê as que enviou ou recebeu
+## AuthContext
 
-**Autenticação por domínio**
-- Login/cadastro por email + senha (auto-confirm ativo p/ demo)
-- Trigger `handle_new_user`: ao cadastrar, extrai domínio do email → encontra empresa correspondente → cria registro em `funcionarios` automaticamente
-- Se o domínio não existe em `empresas`, cadastro é bloqueado com mensagem clara
+`src/contexts/AuthContext.tsx` expõe:
+- `session`, `user` (auth.users), `funcionario` (linha de `funcionarios`), `empresaId`, `isAdmin`, `loading`
+- `signIn`, `signOut`, `updatePresenca(status)`
+- Fluxo correto: `onAuthStateChange` PRIMEIRO, depois `getSession()`. Buscas de `funcionarios`/`user_roles` via `setTimeout(0)` dentro do callback para evitar deadlock do Supabase.
 
-**Dados de demonstração (seed)**
-- 2 empresas: `acme.com` (plano Pro) e `globex.com` (plano Free)
-- 8 funcionários (4 por empresa, incluindo 1 admin cada) — perfis criados; usuários auth pré-criados via SQL com senha padrão demo
-- 15 chamadas + 15 mensagens distribuídas entre os funcionários
+Esse contexto é injetado no router context (padrão TanStack auth-guards) para uso em `beforeLoad`.
 
-## Frontend (TanStack Start)
+## Componentes de layout
 
-**Rotas públicas**
-- `/login` — entrar
-- `/cadastro` — criar conta (valida domínio contra empresas existentes)
+- `src/components/layout/AppSidebar.tsx` — shadcn `Sidebar` com `collapsible="icon"`. Itens fixos + item condicional "Gerenciar Usuários" se `isAdmin`. Usa `Link` do TanStack com `activeProps`.
+- `src/components/layout/AppHeader.tsx` — `SidebarTrigger`, busca placeholder, dropdown de status de presença (online/ocupado/ausente — atualiza coluna `status_presenca` em `funcionarios`), badge de notificações (placeholder por enquanto), avatar com dropdown (nome, cargo, logout).
+- `src/components/layout/AuthenticatedLayout.tsx` — usado dentro de `_authenticated.tsx`: `SidebarProvider` + sidebar + `<main>` com header + `<Outlet/>`.
 
-**Rotas autenticadas (`/_authenticated`)**
-- `/` — Dashboard: resumo de mensagens não lidas, chamadas recentes, colegas online
-- `/chat` — lista de conversas + painel de mensagens em tempo real (Supabase Realtime); indicador de "lida", anexos, status de presença ao lado dos nomes
-- `/chat/$funcionarioId` — conversa específica
-- `/chamadas` — histórico de chamadas + botão "ligar"; modal de chamada simulada (timer, controle mudo/desligar) que registra duração e qualidade no banco
-- `/equipe` — diretório de funcionários da empresa com filtro por departamento e status
-- `/salas` — salas de reunião de voz (criar / entrar / sair); participantes atualizados em tempo real
-- `/admin` — apenas admins: gerenciar funcionários (ativar/desativar, promover a admin), ver dados da empresa, métricas de uso
+## Páginas iniciais (placeholders enxutos)
 
-**Componentes-chave**
-- Sidebar persistente com navegação + avatar/status do usuário
-- Indicador de presença (bolinha verde/amarela/cinza) sincronizado via Realtime
-- Header com busca global e menu de perfil
-- Toggle de status de presença (online/ocupado/ausente)
-- Toasts para notificações de novas mensagens
+Cada rota autenticada renderiza um cabeçalho + card vazio com descrição do que virá. Evita "página em branco" mas deixa claro que é stub. Login/forgot-password/reset-password são funcionais de verdade.
 
-## Credenciais de demo
-Após o setup, mostro as credenciais (ex.: `admin@acme.com` / senha) para você testar imediatamente as duas empresas e ver o isolamento RLS funcionando.
+## Guardas
+
+- `_authenticated.tsx`: `beforeLoad` checa `context.auth.isAuthenticated`; se não, `throw redirect({ to: '/login', search: { redirect: location.href } })`.
+- `_authenticated/_admin.tsx`: checa `context.auth.isAdmin`; se não, redireciona para `/dashboard`.
+- `login.tsx`: se já autenticado, redireciona ao destino.
+
+Como o auth do Supabase é assíncrono no client, o `AuthProvider` mostra um splash enquanto `loading=true` e só então monta o `RouterProvider` com o context populado — assim `beforeLoad` sempre vê estado coerente.
+
+## Estilo
+
+- Mantém tokens já em `src/styles.css` (slate baseColor). Acentos azul-violeta serão refinados num passo posterior — agora uso `bg-primary`/`text-primary` semânticos. Sem cores hardcoded.
+- Sidebar colapsável (icon mode) para telas menores; foco em desktop conforme pedido.
+
+## Detalhes técnicos
+
+1. Adicionar `@tanstack/react-query` (já é peer-dep do TanStack Start setup; verificar e adicionar se necessário) — usado para queries futuras de funcionarios/chamadas. Por ora, `AuthContext` usa Supabase direto.
+2. `router.tsx` passa a usar `createRootRouteWithContext<{ auth: AuthState }>()` — exige editar `__root.tsx` para usar `createRootRouteWithContext`.
+3. `src/main.tsx` (ou onde o router é montado) — embrulha `<RouterProvider>` com `<AuthProvider>` e injeta `auth` via `router.update({ context: { auth } })` no re-render do provider. Vou verificar onde `RouterProvider` é instanciado antes de implementar.
+4. Realtime de presença e notificações ficam para passos seguintes (já há políticas RLS para canais `empresa:<id>:*` e `user:<id>:*`).
+5. Reset de senha: `signUp`/`resetPasswordForEmail` usam `redirectTo: window.location.origin + '/reset-password'`.
+6. `index.tsx` atual (placeholder) será substituído por um componente que usa `Navigate` para `/dashboard` (auth) ou `/login`.
+
+## Pré-requisitos do usuário (importante)
+
+Para conseguir logar, é preciso ter ao menos 1 linha em `empresas` cujo `dominio_email` bata com o email do primeiro usuário (o trigger `handle_new_user` bloqueia domínios não cadastrados). Recomendo cadastrar p.ex. `acme.com` antes de criar o primeiro usuário pela tela de cadastro — ou eu posso adicionar uma rota `/signup` simples agora (não foi pedida explicitamente; aviso na entrega para você criar via SQL).
+
+## Entregáveis deste passo
+
+1. `AuthContext` + provider
+2. Rotas: `login`, `forgot-password`, `reset-password`, `_authenticated` layout, 6 páginas autenticadas, `_admin/usuarios`
+3. Sidebar + Header + AuthenticatedLayout
+4. Atualização de `__root.tsx` e `router.tsx` para context tipado
+5. Atualização de `index.tsx` removendo placeholder
+6. Sem chamadas reais ainda em chamadas/mensagens/realtime — só estrutura
+
