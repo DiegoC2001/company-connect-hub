@@ -13,7 +13,6 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { useMensagensChat } from "@/hooks/useMensagensChat";
@@ -92,7 +91,7 @@ export function ChatSheet({ open, onOpenChange, contato, userId, empresaId }: Pr
           )}
         </SheetHeader>
 
-        <ScrollArea className="flex-1" viewportRef={scrollRef}>
+        <div ref={scrollRef} className="flex-1 overflow-y-auto">
           <div className="flex flex-col gap-3 p-4">
             {isLoading ? (
               <>
@@ -130,7 +129,7 @@ export function ChatSheet({ open, onOpenChange, contato, userId, empresaId }: Pr
               </div>
             )}
           </div>
-        </ScrollArea>
+        </div>
 
         <div className="border-t p-3">
           <form
