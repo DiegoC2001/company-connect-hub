@@ -252,6 +252,41 @@ export type Database = {
           },
         ]
       }
+      user_preferences: {
+        Row: {
+          nao_perturbe: boolean
+          notif_chamada_perdida: boolean
+          qualidade_video: string
+          status_padrao: Database["public"]["Enums"]["status_presenca"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          nao_perturbe?: boolean
+          notif_chamada_perdida?: boolean
+          qualidade_video?: string
+          status_padrao?: Database["public"]["Enums"]["status_presenca"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          nao_perturbe?: boolean
+          notif_chamada_perdida?: boolean
+          qualidade_video?: string
+          status_padrao?: Database["public"]["Enums"]["status_presenca"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_preferences_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "funcionarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
