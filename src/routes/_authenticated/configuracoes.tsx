@@ -1,38 +1,51 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { PageHeader } from "@/components/layout/PageHeader";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/contexts/AuthContext";
+import { TabPerfil } from "@/components/configuracoes/TabPerfil";
+import { TabPreferencias } from "@/components/configuracoes/TabPreferencias";
+import { TabIntegracoes } from "@/components/configuracoes/TabIntegracoes";
+import { TabEmpresa } from "@/components/configuracoes/TabEmpresa";
 
 export const Route = createFileRoute("/_authenticated/configuracoes")({
   component: ConfiguracoesPage,
 });
 
 function ConfiguracoesPage() {
-  const { funcionario } = useAuth();
+  const { isAdmin } = useAuth();
+
   return (
-    <div>
-      <PageHeader title="Configurações" description="Gerencie seu perfil e preferências." />
-      <Card>
-        <CardHeader>
-          <CardTitle>Perfil</CardTitle>
-          <CardDescription>Suas informações na empresa.</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-2 text-sm">
-          <div>
-            <span className="text-muted-foreground">Nome:</span> {funcionario?.nome_completo}
-          </div>
-          <div>
-            <span className="text-muted-foreground">Email:</span> {funcionario?.email}
-          </div>
-          <div>
-            <span className="text-muted-foreground">Cargo:</span> {funcionario?.cargo ?? "—"}
-          </div>
-          <div>
-            <span className="text-muted-foreground">Departamento:</span>{" "}
-            {funcionario?.departamento ?? "—"}
-          </div>
-        </CardContent>
-      </Card>
+    <div className="space-y-6">
+      <PageHeader
+        title="Configurações"
+        description="Gerencie seu perfil, preferências e a empresa."
+      />
+
+      <Tabs defaultValue="perfil" className="space-y-6">
+        <TabsList>
+          <TabsTrigger value="perfil">Perfil</TabsTrigger>
+          <TabsTrigger value="preferencias">Preferências</TabsTrigger>
+          {isAdmin && <TabsTrigger value="integracoes">Integrações</TabsTrigger>}
+          {isAdmin && <TabsTrigger value="empresa">Empresa</TabsTrigger>}
+        </TabsList>
+
+        <TabsContent value="perfil">
+          <TabPerfil />
+        </TabsContent>
+        <TabsContent value="preferencias">
+          <TabPreferencias />
+        </TabsContent>
+        {isAdmin && (
+          <TabsContent value="integracoes">
+            <TabIntegracoes />
+          </TabsContent>
+        )}
+        {isAdmin && (
+          <TabsContent value="empresa">
+            <TabEmpresa />
+          </TabsContent>
+        )}
+      </Tabs>
     </div>
   );
 }
