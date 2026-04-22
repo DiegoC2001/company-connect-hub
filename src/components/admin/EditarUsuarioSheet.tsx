@@ -176,6 +176,34 @@ export function EditarUsuarioSheet({ open, onOpenChange, usuario, currentUserId 
 
           <div className="rounded-md border p-3">
             <div className="mb-2 flex items-center gap-2">
+              <KeyRound className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm font-medium">Redefinir senha</span>
+            </div>
+            <p className="mb-3 text-xs text-muted-foreground">
+              Define uma nova senha para este usuário (mín. 6 caracteres).
+            </p>
+            <div className="flex gap-2">
+              <Input
+                type="text"
+                value={novaSenha}
+                onChange={(e) => setNovaSenha(e.target.value)}
+                placeholder="Nova senha"
+                maxLength={72}
+                disabled={savingSenha}
+              />
+              <Button
+                size="sm"
+                onClick={handleResetSenha}
+                disabled={savingSenha || novaSenha.length < 6}
+              >
+                {savingSenha && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Aplicar
+              </Button>
+            </div>
+          </div>
+
+          <div className="rounded-md border p-3">
+            <div className="mb-2 flex items-center gap-2">
               <Power className="h-4 w-4 text-muted-foreground" />
               <span className="text-sm font-medium">Status da conta</span>
             </div>
