@@ -15,7 +15,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { useAtualizarFuncionario, type FuncionarioComRole } from "@/hooks/useUsuarios";
-import { setUserAdmin, setUserPassword } from "@/utils/admin.functions";
+import { deleteFuncionario, setUserAdmin, setUserPassword } from "@/utils/admin.functions";
 import { useQueryClient } from "@tanstack/react-query";
 
 interface Props {
@@ -29,6 +29,7 @@ export function EditarUsuarioSheet({ open, onOpenChange, usuario, currentUserId 
   const atualizar = useAtualizarFuncionario();
   const setAdmin = useServerFn(setUserAdmin);
   const setPassword = useServerFn(setUserPassword);
+  const deleteUser = useServerFn(deleteFuncionario);
   const qc = useQueryClient();
   const [nome, setNome] = useState("");
   const [cargo, setCargo] = useState("");
@@ -37,6 +38,7 @@ export function EditarUsuarioSheet({ open, onOpenChange, usuario, currentUserId 
   const [savingRole, setSavingRole] = useState(false);
   const [novaSenha, setNovaSenha] = useState("");
   const [savingSenha, setSavingSenha] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     if (usuario) {
@@ -107,6 +109,25 @@ export function EditarUsuarioSheet({ open, onOpenChange, usuario, currentUserId 
       toast.error("Falha ao atualizar status", {
         description: e instanceof Error ? e.message : undefined,
       });
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!window.confirm(`Tem certeza que deseja excluir permanentemente ${usuario.nome_completo}?`)) {
+      return;
+    }
+    setIsDeleting(true);
+    try {
+      await deleteUser({ data: { userId: usuario.id } });
+      toast.success("Usuário excluído permanentemente");
+      void qc.invalidateQueries({ queryKey: ["usuarios"] });
+      onOpenChange(false);
+    } catch (e) {
+      toast.error("Falha ao excluir usuário", {
+        description: e instanceof Error ? e.message : undefined,
+      });
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -216,9 +237,23 @@ export function EditarUsuarioSheet({ open, onOpenChange, usuario, currentUserId 
             >
               {usuario.ativo ? "Desativar conta" : "Reativar conta"}
             </Button>
+            {!isSelf && (
+              <div className="mt-4 pt-4 border-t border-destructive/20">
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={handleDelete}
+                  disabled={isDeleting}
+                  className="w-full"
+                >
+                  {isDeleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Excluir permanentemente
+                </Button>
+              </div>
+            )}
             {isSelf && (
               <p className="mt-2 text-xs text-muted-foreground">
-                Você não pode alterar o próprio status.
+                Você não pode alterar o próprio status ou excluir sua própria conta.
               </p>
             )}
           </div>

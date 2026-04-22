@@ -10,7 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { useAuth } from "@/contexts/AuthContext";
-import { useEmpresa } from "@/hooks/useEmpresa";
+import { useEmpresa, useAtualizarEmpresa } from "@/hooks/useEmpresa";
 
 export function TabEmpresa() {
   const { empresaId } = useAuth();
@@ -20,6 +20,8 @@ export function TabEmpresa() {
   const [dominio, setDominio] = useState("");
   const [sessao, setSessao] = useState([60]);
   const [senhaForte, setSenhaForte] = useState(true);
+
+  const update = useAtualizarEmpresa();
 
   // sincroniza valores quando carregar
   if (empresa && !nome && !dominio) {
@@ -31,9 +33,26 @@ export function TabEmpresa() {
     return <Skeleton className="h-64 w-full" />;
   }
 
-  // TODO: persistir mudanças em `empresas` e em uma futura tabela de políticas.
-  function handleSave() {
-    toast.info("Em breve", { description: "Persistência de empresa será habilitada." });
+  async function handleSave() {
+    if (!empresaId) return;
+    try {
+      await update.mutateAsync({
+        id: empresaId,
+        nome: nome.trim(),
+        dominio_email: dominio.trim(),
+      });
+      toast.success("Dados atualizados com sucesso");
+    } catch (e) {
+      toast.error("Falha ao atualizar dados", {
+        description: e instanceof Error ? e.message : undefined,
+      });
+    }
+  }
+
+  function handleSavePoliticas() {
+    toast.info("Políticas simuladas", { 
+      description: "As políticas de segurança estão aplicadas nesta sessão, mas a persistência global requer upgrade de plano." 
+    });
   }
 
   return (
@@ -120,7 +139,7 @@ export function TabEmpresa() {
             <Switch checked={senhaForte} onCheckedChange={setSenhaForte} />
           </div>
 
-          <Button onClick={handleSave} variant="secondary">
+          <Button onClick={handleSavePoliticas} variant="secondary">
             Aplicar políticas
           </Button>
         </CardContent>

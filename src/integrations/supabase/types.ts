@@ -201,6 +201,61 @@ export type Database = {
           },
         ];
       };
+      mensagens_sala: {
+        Row: {
+          arquivo_url: string | null;
+          conteudo: string;
+          data_envio: string;
+          empresa_id: string;
+          id: string;
+          remetente_id: string;
+          sala_id: string;
+          tipo_arquivo: string | null;
+        };
+        Insert: {
+          arquivo_url?: string | null;
+          conteudo: string;
+          data_envio?: string;
+          empresa_id: string;
+          id?: string;
+          remetente_id: string;
+          sala_id: string;
+          tipo_arquivo?: string | null;
+        };
+        Update: {
+          arquivo_url?: string | null;
+          conteudo?: string;
+          data_envio?: string;
+          empresa_id?: string;
+          id?: string;
+          remetente_id?: string;
+          sala_id?: string;
+          tipo_arquivo?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "mensagens_sala_empresa_id_fkey";
+            columns: ["empresa_id"];
+            isOneToOne: false;
+            referencedRelation: "empresas";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "mensagens_sala_remetente_id_fkey";
+            columns: ["remetente_id"];
+            isOneToOne: false;
+            referencedRelation: "funcionarios";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "mensagens_sala_sala_id_fkey";
+            columns: ["sala_id"];
+            isOneToOne: false;
+            referencedRelation: "salas_reuniao";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       salas_reuniao: {
         Row: {
           ativa: boolean;

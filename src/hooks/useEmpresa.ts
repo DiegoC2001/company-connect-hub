@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
 export function useEmpresa(empresaId: string | null) {
@@ -13,6 +13,24 @@ export function useEmpresa(empresaId: string | null) {
         .maybeSingle();
       if (error) throw error;
       return data;
+    },
+  });
+}
+
+export function useAtualizarEmpresa() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: {
+      id: string;
+      nome?: string;
+      dominio_email?: string;
+    }) => {
+      const { id, ...patch } = input;
+      const { error } = await supabase.from("empresas").update(patch).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: (_, variables) => {
+      void qc.invalidateQueries({ queryKey: ["empresa", variables.id] });
     },
   });
 }

@@ -120,3 +120,38 @@ export const setUserAdmin = createServerFn({ method: "POST" })
     });
     return { success: true };
   });
+
+const deleteUserSchema = z.object({
+  userId: z.string().uuid(),
+});
+
+export const deleteFuncionario = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => deleteUserSchema.parse(input))
+  .handler(async ({ data, context }) => {
+    const empresaId = await ensureAdminAndEmpresa(context.userId);
+
+    if (data.userId === context.userId) {
+      throw new Error("Você não pode excluir a si mesmo");
+    }
+
+    // Garante que o alvo é da mesma empresa
+    const { data: alvo } = await supabaseAdmin
+      .from("funcionarios")
+      .select("empresa_id")
+      .eq("id", data.userId)
+      .maybeSingle();
+    if (!alvo || alvo.empresa_id !== empresaId) {
+      throw new Error("Funcionário não pertence à sua empresa");
+    }
+
+    // Exclui do Auth (isso remove automaticamente das tabelas via cascade ou manual se necessário)
+    // No Supabase, excluir do auth.users remove as roles, mas precisamos remover do public.funcionarios manualmente se não houver trigger
+    const { error: authError } = await supabaseAdmin.auth.admin.deleteUser(data.userId);
+    if (authError) throw new Error(authError.message);
+
+    // O trigger handle_user_delete deve cuidar do resto, mas por precaução:
+    await supabaseAdmin.from("funcionarios").delete().eq("id", data.userId);
+
+    return { success: true };
+  });

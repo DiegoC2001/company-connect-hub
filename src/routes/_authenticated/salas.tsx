@@ -12,6 +12,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useEntrarSala, useSalas, type SalaComCriador } from "@/hooks/useSalas";
 import { CriarSalaDialog } from "@/components/salas/CriarSalaDialog";
 import { GerenciarSalaSheet } from "@/components/salas/GerenciarSalaSheet";
+import { MeetingRoomDialog } from "@/components/salas/MeetingRoomDialog";
 
 export const Route = createFileRoute("/_authenticated/salas")({
   component: SalasPage,
@@ -23,13 +24,14 @@ function SalasPage() {
   const entrar = useEntrarSala();
   const [criarOpen, setCriarOpen] = useState(false);
   const [salaGerenciar, setSalaGerenciar] = useState<SalaComCriador | null>(null);
+  const [salaAtiva, setSalaAtiva] = useState<SalaComCriador | null>(null);
 
   const handleEntrar = async (sala: SalaComCriador) => {
     if (!user) return;
     try {
       await entrar.mutateAsync({ sala, userId: user.id });
+      setSalaAtiva(sala);
       toast.success(`Você entrou em "${sala.nome_sala}"`);
-      // TODO: integrar com WebRTC real ao ingressar
     } catch (e) {
       toast.error("Falha ao entrar", {
         description: e instanceof Error ? e.message : undefined,
@@ -151,6 +153,11 @@ function SalasPage() {
         sala={salaGerenciar}
         empresaId={empresaId}
         userId={user?.id ?? null}
+      />
+      <MeetingRoomDialog
+        open={!!salaAtiva}
+        onOpenChange={(v) => !v && setSalaAtiva(null)}
+        sala={salaAtiva}
       />
     </div>
   );
