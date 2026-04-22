@@ -10,8 +10,13 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useState } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider, type AuthState } from "@/contexts/AuthContext";
+import { installServerFnAuthFetch } from "@/integrations/supabase/server-fn-fetch";
 
 import appCss from "../styles.css?url";
+
+if (typeof window !== "undefined") {
+  installServerFnAuthFetch();
+}
 
 export interface RouterContext {
   auth: AuthState;

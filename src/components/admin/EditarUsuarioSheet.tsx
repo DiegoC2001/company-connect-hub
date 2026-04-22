@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Loader2, Power, ShieldCheck } from "lucide-react";
+import { KeyRound, Loader2, Power, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
 import {
@@ -14,8 +14,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
-import { useAtualizarFuncionario, type FuncionarioComRole } from "@/hooks/useUsuarios";
-import { setUserAdmin } from "@/utils/admin.functions";
+import {
+  useAtualizarFuncionario,
+  type FuncionarioComRole,
+} from "@/hooks/useUsuarios";
+import { setUserAdmin, setUserPassword } from "@/utils/admin.functions";
 import { useQueryClient } from "@tanstack/react-query";
 
 interface Props {
@@ -28,12 +31,15 @@ interface Props {
 export function EditarUsuarioSheet({ open, onOpenChange, usuario, currentUserId }: Props) {
   const atualizar = useAtualizarFuncionario();
   const setAdmin = useServerFn(setUserAdmin);
+  const setPassword = useServerFn(setUserPassword);
   const qc = useQueryClient();
   const [nome, setNome] = useState("");
   const [cargo, setCargo] = useState("");
   const [departamento, setDepartamento] = useState("");
   const [isAdmin, setIsAdmin] = useState(false);
   const [savingRole, setSavingRole] = useState(false);
+  const [novaSenha, setNovaSenha] = useState("");
+  const [savingSenha, setSavingSenha] = useState(false);
 
   useEffect(() => {
     if (usuario) {
@@ -41,8 +47,28 @@ export function EditarUsuarioSheet({ open, onOpenChange, usuario, currentUserId 
       setCargo(usuario.cargo ?? "");
       setDepartamento(usuario.departamento ?? "");
       setIsAdmin(usuario.is_admin);
+      setNovaSenha("");
     }
   }, [usuario]);
+
+  const handleResetSenha = async () => {
+    if (novaSenha.length < 6) {
+      toast.error("Senha deve ter ao menos 6 caracteres");
+      return;
+    }
+    setSavingSenha(true);
+    try {
+      await setPassword({ data: { userId: usuario!.id, password: novaSenha } });
+      toast.success("Senha redefinida");
+      setNovaSenha("");
+    } catch (e) {
+      toast.error("Falha ao redefinir senha", {
+        description: e instanceof Error ? e.message : undefined,
+      });
+    } finally {
+      setSavingSenha(false);
+    }
+  };
 
   if (!usuario) return null;
 
@@ -144,6 +170,34 @@ export function EditarUsuarioSheet({ open, onOpenChange, usuario, currentUserId 
               onCheckedChange={setIsAdmin}
               disabled={isSelf}
             />
+          </div>
+
+          <div className="rounded-md border p-3">
+            <div className="mb-2 flex items-center gap-2">
+              <KeyRound className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm font-medium">Redefinir senha</span>
+            </div>
+            <p className="mb-3 text-xs text-muted-foreground">
+              Define uma nova senha para este usuário (mín. 6 caracteres).
+            </p>
+            <div className="flex gap-2">
+              <Input
+                type="text"
+                value={novaSenha}
+                onChange={(e) => setNovaSenha(e.target.value)}
+                placeholder="Nova senha"
+                maxLength={72}
+                disabled={savingSenha}
+              />
+              <Button
+                size="sm"
+                onClick={handleResetSenha}
+                disabled={savingSenha || novaSenha.length < 6}
+              >
+                {savingSenha && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Aplicar
+              </Button>
+            </div>
           </div>
 
           <div className="rounded-md border p-3">
