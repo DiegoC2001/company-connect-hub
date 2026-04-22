@@ -15,9 +15,7 @@ function MensagensPage() {
           <CardTitle>Conversas</CardTitle>
           <CardDescription>Em breve: chat em tempo real via Supabase Realtime.</CardDescription>
         </CardHeader>
-        <CardContent className="text-sm text-muted-foreground">
-          Nenhuma conversa ainda.
-        </CardContent>
+        <CardContent className="text-sm text-muted-foreground">Nenhuma conversa ainda.</CardContent>
       </Card>
     </div>
   );

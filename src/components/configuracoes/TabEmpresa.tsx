@@ -107,13 +107,7 @@ export function TabEmpresa() {
               <Label>Tempo limite de sessão</Label>
               <span className="text-sm font-medium">{sessao[0]} min</span>
             </div>
-            <Slider
-              value={sessao}
-              onValueChange={setSessao}
-              min={15}
-              max={240}
-              step={15}
-            />
+            <Slider value={sessao} onValueChange={setSessao} min={15} max={240} step={15} />
           </div>
 
           <div className="flex items-center justify-between rounded-lg border p-4">

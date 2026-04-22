@@ -18,10 +18,7 @@ import { Label } from "@/components/ui/label";
 
 export type IntegracaoStatus = "conectado" | "desconectado" | "configurar";
 
-const STATUS_META: Record<
-  IntegracaoStatus,
-  { label: string; className: string; cta: string }
-> = {
+const STATUS_META: Record<IntegracaoStatus, { label: string; className: string; cta: string }> = {
   conectado: {
     label: "Conectado",
     className: "bg-emerald-500/15 text-emerald-600 hover:bg-emerald-500/20",
@@ -86,9 +83,7 @@ export function IntegracaoCard({ nome, descricao, status }: Props) {
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Configurar {nome}</DialogTitle>
-              <DialogDescription>
-                Informe as credenciais e teste a conexão.
-              </DialogDescription>
+              <DialogDescription>Informe as credenciais e teste a conexão.</DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
               <div className="space-y-2">

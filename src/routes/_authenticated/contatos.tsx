@@ -8,6 +8,7 @@ import { ContatosFilters } from "@/components/contatos/ContatosFilters";
 import { ContatosTable } from "@/components/contatos/ContatosTable";
 import { CallDialog } from "@/components/contatos/CallDialog";
 import { ChatSheet } from "@/components/contatos/ChatSheet";
+import { useDebounce } from "@/hooks/useDebounce";
 import type { Database } from "@/integrations/supabase/types";
 
 type Status = Database["public"]["Enums"]["status_presenca"] | "todos";
@@ -21,6 +22,7 @@ function ContatosPage() {
   const { data: funcionarios, isLoading } = useFuncionarios(empresaId, user?.id ?? null);
 
   const [busca, setBusca] = useState("");
+  const debouncedBusca = useDebounce(busca, 500);
   const [departamento, setDepartamento] = useState("todos");
   const [status, setStatus] = useState<Status>("todos");
 
@@ -37,14 +39,14 @@ function ContatosPage() {
 
   const filtrados = useMemo(() => {
     if (!funcionarios) return [];
-    const q = busca.trim().toLowerCase();
+    const q = debouncedBusca.trim().toLowerCase();
     return funcionarios.filter((f) => {
       if (q && !f.nome_completo.toLowerCase().includes(q)) return false;
       if (departamento !== "todos" && f.departamento !== departamento) return false;
       if (status !== "todos" && f.status_presenca !== status) return false;
       return true;
     });
-  }, [funcionarios, busca, departamento, status]);
+  }, [funcionarios, debouncedBusca, departamento, status]);
 
   const handleCall = (f: Funcionario, tipo: "voz" | "video") => {
     setCallTipo(tipo);

@@ -87,7 +87,9 @@ const AuthenticatedAdminUsuariosRoute =
     id: '/usuarios',
     path: '/usuarios',
     getParentRoute: () => AuthenticatedAdminRoute,
-  } as any)
+  } as any).lazy(() =>
+    import('./routes/_authenticated/_admin/usuarios.lazy').then((d) => d.Route),
+  )
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -324,3 +326,12 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
+}

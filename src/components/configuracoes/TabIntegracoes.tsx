@@ -8,8 +8,8 @@ export function TabIntegracoes() {
         <CardHeader>
           <CardTitle>Integrações externas</CardTitle>
           <CardDescription>
-            Conecte serviços para enriquecer o cloudphone. As integrações abaixo são
-            visuais — em breve serão persistidas.
+            Conecte serviços para enriquecer o cloudphone. As integrações abaixo são visuais — em
+            breve serão persistidas.
           </CardDescription>
         </CardHeader>
         <CardContent className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

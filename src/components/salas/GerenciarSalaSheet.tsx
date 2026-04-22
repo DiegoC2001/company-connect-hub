@@ -34,7 +34,7 @@ export function GerenciarSalaSheet({ open, onOpenChange, sala, empresaId, userId
   const atualizar = useAtualizarSala();
 
   const participantesIds = useMemo(
-    () => ((sala?.participantes as unknown as string[]) ?? []),
+    () => (sala?.participantes as unknown as string[]) ?? [],
     [sala],
   );
 
@@ -80,9 +80,7 @@ export function GerenciarSalaSheet({ open, onOpenChange, sala, empresaId, userId
       <SheetContent className="flex w-full flex-col gap-0 sm:max-w-md">
         <SheetHeader>
           <SheetTitle>{sala?.nome_sala ?? "Gerenciar sala"}</SheetTitle>
-          <SheetDescription>
-            Criada por {sala?.criador?.nome_completo ?? "—"}
-          </SheetDescription>
+          <SheetDescription>Criada por {sala?.criador?.nome_completo ?? "—"}</SheetDescription>
         </SheetHeader>
 
         <div className="mt-4 flex-1 overflow-y-auto">

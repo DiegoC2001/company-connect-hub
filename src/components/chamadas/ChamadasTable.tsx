@@ -1,6 +1,7 @@
 import { ArrowDownLeft, ArrowUpRight, Phone, PhoneMissed, Star } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { Link } from "@tanstack/react-router";
 import {
   Table,
   TableBody,
@@ -31,7 +32,10 @@ const formatDuracao = (s: number) => {
   return m > 0 ? `${m}m ${sec}s` : `${sec}s`;
 };
 
-const STATUS_LABEL: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
+const STATUS_LABEL: Record<
+  string,
+  { label: string; variant: "default" | "secondary" | "destructive" | "outline" }
+> = {
   em_andamento: { label: "Em andamento", variant: "default" },
   completada: { label: "Completada", variant: "secondary" },
   perdida: { label: "Perdida", variant: "destructive" },
@@ -84,6 +88,9 @@ export function ChamadasTable({ chamadas, loading, currentUserId, onRecall }: Pr
         <p className="mt-1 max-w-sm text-sm text-muted-foreground">
           Suas chamadas aparecerão aqui após a primeira ligação.
         </p>
+        <Button asChild className="mt-6">
+          <Link to="/contatos">Fazer sua primeira chamada</Link>
+        </Button>
       </div>
     );
   }
@@ -105,8 +112,12 @@ export function ChamadasTable({ chamadas, loading, currentUserId, onRecall }: Pr
           {chamadas.map((c) => {
             const recebida = c.destinatario_id === currentUserId;
             const contato = recebida ? c.remetente : c.destinatario;
-            const Icon = c.status === "perdida" ? PhoneMissed : recebida ? ArrowDownLeft : ArrowUpRight;
-            const statusCfg = STATUS_LABEL[c.status] ?? { label: c.status, variant: "outline" as const };
+            const Icon =
+              c.status === "perdida" ? PhoneMissed : recebida ? ArrowDownLeft : ArrowUpRight;
+            const statusCfg = STATUS_LABEL[c.status] ?? {
+              label: c.status,
+              variant: "outline" as const,
+            };
             return (
               <TableRow key={c.id}>
                 <TableCell>

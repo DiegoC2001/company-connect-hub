@@ -106,9 +106,7 @@ export function AppHeader() {
           <DropdownMenuContent align="end" className="w-56">
             <DropdownMenuLabel>
               <div className="font-medium">{funcionario?.nome_completo}</div>
-              <div className="text-xs font-normal text-muted-foreground">
-                {funcionario?.email}
-              </div>
+              <div className="text-xs font-normal text-muted-foreground">{funcionario?.email}</div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={() => void navigate({ to: "/configuracoes" })}>

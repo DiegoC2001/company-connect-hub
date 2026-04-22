@@ -59,11 +59,7 @@ export function useMensagensChat(
           if (novo.remetente_id === contatoId) {
             void queryClient.invalidateQueries({ queryKey });
             // Marcar como lida imediatamente
-            void supabase
-              .from("mensagens_chat")
-              .update({ lida: true })
-              .eq("id", novo.id)
-              .then();
+            void supabase.from("mensagens_chat").update({ lida: true }).eq("id", novo.id).then();
           }
         },
       )

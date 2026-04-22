@@ -30,9 +30,7 @@ const mainItems = [
   { title: "Configurações", url: "/configuracoes", icon: Settings },
 ] as const;
 
-const adminItems = [
-  { title: "Gerenciar Usuários", url: "/usuarios", icon: ShieldCheck },
-] as const;
+const adminItems = [{ title: "Gerenciar Usuários", url: "/usuarios", icon: ShieldCheck }] as const;
 
 export function AppSidebar() {
   const { isAdmin } = useAuth();

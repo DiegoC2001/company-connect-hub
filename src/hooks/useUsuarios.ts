@@ -21,7 +21,7 @@ export function useUsuarios(empresaId: string | null) {
       if (error) throw error;
 
       const ids = (funcionarios ?? []).map((f) => f.id);
-      let roleMap = new Map<string, boolean>();
+      const roleMap = new Map<string, boolean>();
       if (ids.length) {
         const { data: roles } = await supabase
           .from("user_roles")

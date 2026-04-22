@@ -20,6 +20,7 @@ interface Props {
   loading: boolean;
   onCall: (f: Funcionario, tipo: "voz" | "video") => void;
   onMessage: (f: Funcionario) => void;
+  onLimpar?: () => void;
 }
 
 const podeReceberChamada = (status: Funcionario["status_presenca"]) =>
@@ -33,7 +34,7 @@ const iniciais = (nome: string) =>
     .map((n) => n[0]?.toUpperCase())
     .join("");
 
-export function ContatosTable({ funcionarios, loading, onCall, onMessage }: Props) {
+export function ContatosTable({ funcionarios, loading, onCall, onMessage, onLimpar }: Props) {
   if (loading) {
     return (
       <div className="rounded-md border bg-card">
@@ -94,6 +95,11 @@ export function ContatosTable({ funcionarios, loading, onCall, onMessage }: Prop
           Nenhum funcionário corresponde aos filtros aplicados ou sua empresa ainda não tem outros
           colaboradores cadastrados.
         </p>
+        {onLimpar && (
+          <Button variant="outline" className="mt-6" onClick={onLimpar}>
+            Limpar filtros
+          </Button>
+        )}
       </div>
     );
   }

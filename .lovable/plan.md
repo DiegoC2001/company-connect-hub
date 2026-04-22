@@ -1,5 +1,3 @@
-
-
 ## Análise
 
 Construir página `/contatos` rica: tabela + filtros + ações de chamada/mensagem + diálogos + chat lateral + realtime de presença + notificações.
@@ -9,6 +7,7 @@ Atenção: backend de chamadas e Storage ainda não existe. Vou estruturar o fro
 ## Escopo deste passo
 
 ✅ **Implementado agora:**
+
 1. Listagem real de `funcionarios` da empresa (excluindo o próprio usuário).
 2. Filtros: busca por nome, select de departamento (derivado dos dados), select de status, botão limpar.
 3. Tabela com avatar, nome, cargo, departamento, badge de presença, último acesso (com `date-fns` formatação relativa).
@@ -20,6 +19,7 @@ Atenção: backend de chamadas e Storage ainda não existe. Vou estruturar o fro
 9. Toast de notificação quando chega nova mensagem com chat fechado (via mesmo canal user).
 
 ⏸️ **Adiado (próximo passo de chamadas):**
+
 - Persistência em `chamadas` + server function `iniciar-chamada`/`finalizar-chamada`.
 - WebRTC real (vídeo/voz). Por ora o dialog é "fake call".
 - Upload de arquivo no chat (precisa criar bucket Storage com RLS — também próximo passo).
@@ -49,6 +49,7 @@ Hooks usam **TanStack Query** (já configurado no `__root.tsx` via `QueryClientP
 ### Realtime — convenção de canais
 
 As políticas RLS de `realtime.messages` exigem prefixos `empresa:<empresa_id>:*` ou `user:<user_id>:*`. Usarei:
+
 - `empresa:<empresaId>:presenca` para mudanças em `funcionarios` (qualquer um da empresa).
 - `user:<userId>:mensagens` para mensagens dirigidas ao usuário atual.
 
@@ -77,12 +78,14 @@ Subscription global montada no layout `_authenticated` (não na página) para fu
 ## Tokens de status no styles.css
 
 Adicionar:
+
 ```css
 --status-online: oklch(0.7 0.18 145);
 --status-ocupado: oklch(0.6 0.22 25);
 --status-ausente: oklch(0.78 0.16 80);
 --status-offline: oklch(0.6 0.02 260);
 ```
+
 e registrar em `@theme inline` como `--color-status-*`.
 
 ## Entregáveis
@@ -97,4 +100,3 @@ e registrar em `@theme inline` como `--color-status-*`.
 ## Pré-requisito do usuário (lembrete)
 
 Para testar de verdade, é preciso ter ≥2 funcionários na mesma empresa (mesmo `dominio_email`). Aviso na entrega.
-

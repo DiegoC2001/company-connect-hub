@@ -36,9 +36,7 @@ export const inviteFuncionario = createServerFn({ method: "POST" })
       .maybeSingle();
     const dominio = data.email.split("@")[1]?.toLowerCase();
     if (!empresa || empresa.dominio_email.toLowerCase() !== dominio) {
-      throw new Error(
-        `Email deve pertencer ao domínio @${empresa?.dominio_email ?? "da empresa"}`,
-      );
+      throw new Error(`Email deve pertencer ao domínio @${empresa?.dominio_email ?? "da empresa"}`);
     }
 
     const { data: created, error } = await supabaseAdmin.auth.admin.inviteUserByEmail(data.email, {

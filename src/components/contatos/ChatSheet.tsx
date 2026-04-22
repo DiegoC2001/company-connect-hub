@@ -38,11 +38,12 @@ const iniciais = (nome: string) =>
 export function ChatSheet({ open, onOpenChange, contato, userId, empresaId }: Props) {
   const [texto, setTexto] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
-  const { data: mensagens, isLoading, sendMessage, isSending } = useMensagensChat(
-    userId,
-    contato?.id ?? null,
-    empresaId,
-  );
+  const {
+    data: mensagens,
+    isLoading,
+    sendMessage,
+    isSending,
+  } = useMensagensChat(userId, contato?.id ?? null, empresaId);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -110,9 +111,7 @@ export function ChatSheet({ open, onOpenChange, contato, userId, empresaId }: Pr
                     <div
                       className={cn(
                         "max-w-[80%] rounded-lg px-3 py-2 text-sm",
-                        minha
-                          ? "bg-primary text-primary-foreground"
-                          : "bg-muted text-foreground",
+                        minha ? "bg-primary text-primary-foreground" : "bg-muted text-foreground",
                       )}
                     >
                       {m.conteudo}
