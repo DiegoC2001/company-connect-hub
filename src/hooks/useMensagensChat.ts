@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
@@ -10,6 +10,8 @@ export function useMensagensChat(
   contatoId: string | null,
   empresaId: string | null,
 ) {
+  const [isOutroDigitando, setIsOutroDigitando] = useState(false);
+  const typingChannelRef = useRef<any>(null);
   const queryClient = useQueryClient();
   const queryKey = ["mensagens", userId, contatoId];
 
@@ -68,8 +70,41 @@ export function useMensagensChat(
     return () => {
       void supabase.removeChannel(channel);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userId, contatoId, queryClient, queryKey]);
+
+  // Typing Indicator Realtime
+  useEffect(() => {
+    if (!userId || !contatoId) return;
+
+    // Use a shared channel for both users by sorting their IDs
+    const roomKey = [userId, contatoId].sort().join(":");
+    const channel = supabase.channel(`typing:${roomKey}`);
+
+    channel
+      .on("broadcast", { event: "typing" }, ({ payload }) => {
+        // Only update if the typing event is from the other user
+        if (payload.userId === contatoId) {
+          setIsOutroDigitando(payload.isTyping);
+        }
+      })
+      .subscribe();
+
+    typingChannelRef.current = channel;
+
+    return () => {
+      void supabase.removeChannel(channel);
+    };
   }, [userId, contatoId]);
+
+  const setTyping = (isTyping: boolean) => {
+    if (typingChannelRef.current && userId) {
+      void typingChannelRef.current.send({
+        type: "broadcast",
+        event: "typing",
+        payload: { userId, isTyping },
+      });
+    }
+  };
 
   const sendMutation = useMutation({
     mutationFn: async ({
@@ -102,5 +137,11 @@ export function useMensagensChat(
     },
   });
 
-  return { ...query, sendMessage: sendMutation.mutateAsync, isSending: sendMutation.isPending };
+  return {
+    ...query,
+    sendMessage: sendMutation.mutateAsync,
+    isSending: sendMutation.isPending,
+    isOutroDigitando,
+    setTyping,
+  };
 }

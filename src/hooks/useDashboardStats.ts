@@ -6,6 +6,13 @@ export function useDashboardStats(userId: string | null, empresaId: string | nul
     queryKey: ["dashboard-stats", userId, empresaId],
     enabled: !!userId && !!empresaId,
     queryFn: async () => {
+      if (!userId || !empresaId) return {
+        chamadasHoje: 0,
+        mensagensNaoLidas: 0,
+        contatosOnline: 0,
+        salasAtivas: 0,
+      };
+
       const hoje = new Date();
       hoje.setHours(0, 0, 0, 0);
       const hojeIso = hoje.toISOString();

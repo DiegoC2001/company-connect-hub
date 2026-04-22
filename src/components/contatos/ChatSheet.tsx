@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { Paperclip, Send } from "lucide-react";
+import { Paperclip, Send, Loader2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
@@ -43,8 +44,11 @@ export function ChatSheet({ open, onOpenChange, contato, userId, empresaId }: Pr
     isLoading,
     sendMessage,
     isSending,
+    isOutroDigitando,
+    setTyping,
   } = useMensagensChat(userId, contato?.id ?? null, empresaId);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [isUploading, setIsUploading] = useState(false);
 
   useEffect(() => {
@@ -121,8 +125,12 @@ export function ChatSheet({ open, onOpenChange, contato, userId, empresaId }: Pr
               </div>
               <div className="min-w-0 text-left">
                 <SheetTitle className="truncate text-base">{contato.nome_completo}</SheetTitle>
-                <SheetDescription className="truncate text-xs">
-                  {contato.cargo ?? contato.email}
+                <SheetDescription className="truncate text-xs flex items-center gap-1">
+                  {isOutroDigitando ? (
+                    <span className="text-primary font-medium animate-pulse">Digitando...</span>
+                  ) : (
+                    contato.cargo ?? contato.email
+                  )}
                 </SheetDescription>
               </div>
             </div>
@@ -219,7 +227,14 @@ export function ChatSheet({ open, onOpenChange, contato, userId, empresaId }: Pr
             </Button>
             <Input
               value={texto}
-              onChange={(e) => setTexto(e.target.value)}
+              onChange={(e) => {
+                setTexto(e.target.value);
+                setTyping(true);
+                if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+                typingTimeoutRef.current = setTimeout(() => {
+                  setTyping(false);
+                }, 2000);
+              }}
               placeholder="Digite uma mensagem..."
               disabled={!contato || isSending}
             />

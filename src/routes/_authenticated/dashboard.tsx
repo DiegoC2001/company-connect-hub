@@ -4,6 +4,9 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { useAuth } from "@/contexts/AuthContext";
 import { PhoneCall, MessageSquare, Users, Video, Loader2 } from "lucide-react";
 import { useDashboardStats } from "@/hooks/useDashboardStats";
+import { useAtividadeRecente } from "@/hooks/useAtividadeRecente";
+import { formatDistanceToNow } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   component: DashboardPage,
@@ -11,7 +14,8 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
 
 function DashboardPage() {
   const { user, funcionario, empresaId } = useAuth();
-  const { data: stats, isLoading } = useDashboardStats(user?.id ?? null, empresaId);
+  const { data: stats, isLoading: statsLoading } = useDashboardStats(user?.id ?? null, empresaId);
+  const { data: atividades, isLoading: atividadesLoading } = useAtividadeRecente(user?.id ?? null, empresaId);
 
   const statsItems = [
     { 
@@ -55,7 +59,7 @@ function DashboardPage() {
               <s.icon className={`h-4 w-4 ${s.color}`} />
             </CardHeader>
             <CardContent>
-              {isLoading ? (
+              {statsLoading ? (
                 <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
               ) : (
                 <div className="text-2xl font-bold">{s.value}</div>
@@ -70,8 +74,33 @@ function DashboardPage() {
           <CardTitle>Atividade recente</CardTitle>
           <CardDescription>Resumo das últimas interações no sistema.</CardDescription>
         </CardHeader>
-        <CardContent className="text-sm text-muted-foreground py-10 text-center">
-          As atividades recentes aparecerão aqui conforme você interage com o sistema.
+        <CardContent>
+          {atividadesLoading ? (
+            <div className="flex justify-center py-6">
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            </div>
+          ) : atividades && atividades.length > 0 ? (
+            <div className="space-y-4">
+              {atividades.map((a) => (
+                <div key={a.id} className="flex items-start gap-4 rounded-lg border p-3 transition-colors hover:bg-muted/50">
+                  <div className="rounded-full bg-muted p-2">
+                    {a.tipo === "chamada" ? <PhoneCall className="h-4 w-4" /> : <MessageSquare className="h-4 w-4" />}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium leading-none">{a.titulo}</p>
+                    <p className="text-xs text-muted-foreground mt-1 truncate">{a.subtitulo}</p>
+                  </div>
+                  <div className="text-[10px] text-muted-foreground whitespace-nowrap">
+                    {formatDistanceToNow(new Date(a.data), { addSuffix: true, locale: ptBR })}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-sm text-muted-foreground py-10 text-center">
+              As atividades recentes aparecerão aqui conforme você interage com o sistema.
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

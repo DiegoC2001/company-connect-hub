@@ -6,6 +6,7 @@ export function useTotalUnreadMessages(userId: string | null) {
     queryKey: ["unread-messages-count", userId],
     enabled: !!userId,
     queryFn: async () => {
+      if (!userId) return 0;
       const { count, error } = await supabase
         .from("mensagens_chat")
         .select("*", { count: "exact", head: true })
