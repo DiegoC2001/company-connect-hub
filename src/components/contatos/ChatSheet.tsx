@@ -216,7 +216,7 @@ export function ChatSheet({ open, onOpenChange, contato, userId, empresaId }: Pr
               variant="ghost"
               size="icon"
               disabled={!contato || isSending || isUploading}
-              title="Anexar arquivo"
+              title="Anexar arquivo (Arquivos expiram em 3 dias)"
               onClick={() => fileInputRef.current?.click()}
             >
               {isUploading ? (
