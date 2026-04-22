@@ -1,13 +1,14 @@
 import { useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
+import { toast } from "sonner";
 import { Card, CardContent } from "@/components/ui/card";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { useAuth } from "@/contexts/AuthContext";
 import { useFuncionarios, type Funcionario } from "@/hooks/useFuncionarios";
 import { ContatosFilters } from "@/components/contatos/ContatosFilters";
 import { ContatosTable } from "@/components/contatos/ContatosTable";
-import { CallDialog } from "@/components/contatos/CallDialog";
 import { ChatSheet } from "@/components/contatos/ChatSheet";
+import { useStartCall } from "@/components/contatos/CallDialog";
 import { useDebounce } from "@/hooks/useDebounce";
 import type { Database } from "@/integrations/supabase/types";
 
@@ -20,14 +21,13 @@ export const Route = createFileRoute("/_authenticated/contatos")({
 function ContatosPage() {
   const { user, empresaId } = useAuth();
   const { data: funcionarios, isLoading } = useFuncionarios(empresaId, user?.id ?? null);
+  const { initCall, isBusy } = useStartCall();
 
   const [busca, setBusca] = useState("");
   const debouncedBusca = useDebounce(busca, 500);
   const [departamento, setDepartamento] = useState("todos");
   const [status, setStatus] = useState<Status>("todos");
 
-  const [callContato, setCallContato] = useState<Funcionario | null>(null);
-  const [callTipo, setCallTipo] = useState<"voz" | "video">("voz");
   const [chatContato, setChatContato] = useState<Funcionario | null>(null);
   const [chatOpen, setChatOpen] = useState(false);
 
@@ -49,21 +49,16 @@ function ContatosPage() {
   }, [funcionarios, debouncedBusca, departamento, status]);
 
   const handleCall = (f: Funcionario, tipo: "voz" | "video") => {
-    setCallTipo(tipo);
-    setCallContato(f);
+    if (isBusy) {
+      toast.warning("Você já está em uma chamada");
+      return;
+    }
+    void initCall(f, tipo);
   };
 
   const handleMessage = (f: Funcionario) => {
     setChatContato(f);
     setChatOpen(true);
-  };
-
-  const handleLeaveMessage = () => {
-    if (callContato) {
-      setChatContato(callContato);
-      setChatOpen(true);
-    }
-    setCallContato(null);
   };
 
   return (
@@ -98,13 +93,6 @@ function ContatosPage() {
         </CardContent>
       </Card>
 
-      <CallDialog
-        open={!!callContato}
-        contato={callContato}
-        tipo={callTipo}
-        onCancel={() => setCallContato(null)}
-        onLeaveMessage={handleLeaveMessage}
-      />
       <ChatSheet
         open={chatOpen}
         onOpenChange={setChatOpen}

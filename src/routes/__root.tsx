@@ -4,7 +4,6 @@ import {
   createRootRouteWithContext,
   HeadContent,
   Scripts,
-  useRouterState,
 } from "@tanstack/react-router";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useState } from "react";
@@ -73,7 +72,6 @@ function RootShell({ children }: { children: React.ReactNode }) {
     </html>
   );
 }
-
 
 function RootComponent() {
   const [queryClient] = useState(() => new QueryClient());
