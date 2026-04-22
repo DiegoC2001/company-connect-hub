@@ -74,6 +74,31 @@ const setAdminSchema = z.object({
   isAdmin: z.boolean(),
 });
 
+const setPasswordSchema = z.object({
+  userId: z.string().uuid(),
+  password: z.string().min(6).max(72),
+});
+
+export const setUserPassword = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => setPasswordSchema.parse(input))
+  .handler(async ({ data, context }) => {
+    const empresaId = await ensureAdminAndEmpresa(context.userId);
+    const { data: alvo } = await supabaseAdmin
+      .from("funcionarios")
+      .select("empresa_id")
+      .eq("id", data.userId)
+      .maybeSingle();
+    if (!alvo || alvo.empresa_id !== empresaId) {
+      throw new Error("Funcionário não pertence à sua empresa");
+    }
+    const { error } = await supabaseAdmin.auth.admin.updateUserById(data.userId, {
+      password: data.password,
+    });
+    if (error) throw new Error(error.message);
+    return { success: true };
+  });
+
 export const setUserAdmin = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => setAdminSchema.parse(input))
