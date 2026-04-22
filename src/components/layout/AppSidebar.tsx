@@ -20,6 +20,7 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import { useAuth } from "@/contexts/AuthContext";
+import { useTotalUnreadMessages } from "@/hooks/useTotalUnreadMessages";
 
 const mainItems = [
   { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
@@ -33,7 +34,8 @@ const mainItems = [
 const adminItems = [{ title: "Gerenciar Usuários", url: "/usuarios", icon: ShieldCheck }] as const;
 
 export function AppSidebar() {
-  const { isAdmin } = useAuth();
+  const { user, isAdmin } = useAuth();
+  const { data: unreadCount } = useTotalUnreadMessages(user?.id ?? null);
   const location = useLocation();
 
   const isActive = (url: string) => location.pathname.startsWith(url);
@@ -58,9 +60,16 @@ export function AppSidebar() {
               {mainItems.map((item) => (
                 <SidebarMenuItem key={item.url}>
                   <SidebarMenuButton asChild isActive={isActive(item.url)} tooltip={item.title}>
-                    <Link to={item.url}>
-                      <item.icon className="h-4 w-4" />
-                      <span>{item.title}</span>
+                    <Link to={item.url} className="flex items-center justify-between w-full">
+                      <div className="flex items-center gap-2">
+                        <item.icon className="h-4 w-4" />
+                        <span>{item.title}</span>
+                      </div>
+                      {item.url === "/mensagens" && unreadCount !== undefined && unreadCount > 0 && (
+                        <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
+                          {unreadCount > 9 ? "9+" : unreadCount}
+                        </span>
+                      )}
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
