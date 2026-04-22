@@ -8,24 +8,24 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/login")({
-  component: LoginPage,
+export const Route = createFileRoute("/signup")({
+  component: SignupPage,
 });
 
-function LoginPage() {
-  const { signIn, isAuthenticated, loading } = useAuth();
+function SignupPage() {
+  const { signUp, isAuthenticated, loading } = useAuth();
   const navigate = useNavigate();
+  const [nome, setNome] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
+  const [errors, setErrors] = useState<{ nome?: string; email?: string; password?: string }>({});
 
-  if (!loading && isAuthenticated) {
-    return <Navigate to="/dashboard" />;
-  }
+  if (!loading && isAuthenticated) return <Navigate to="/dashboard" />;
 
   const validate = () => {
     const e: typeof errors = {};
+    if (!nome.trim()) e.nome = "Nome obrigatório";
     if (!email) e.email = "Email obrigatório";
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) e.email = "Email inválido";
     if (!password) e.password = "Senha obrigatória";
@@ -38,12 +38,12 @@ function LoginPage() {
     ev.preventDefault();
     if (!validate()) return;
     setSubmitting(true);
-    const { error } = await signIn(email, password);
+    const { error } = await signUp(email.trim(), password, nome.trim());
     setSubmitting(false);
     if (error) {
-      toast.error("Falha no login", { description: error.message });
+      toast.error("Falha no cadastro", { description: error.message });
     } else {
-      toast.success("Bem-vindo!");
+      toast.success("Conta criada!", { description: "Redirecionando..." });
       void navigate({ to: "/dashboard" });
     }
   };
@@ -55,13 +55,30 @@ function LoginPage() {
           <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-lg bg-primary text-primary-foreground font-bold text-lg">
             C
           </div>
-          <CardTitle className="text-2xl">CloudPhone</CardTitle>
-          <CardDescription>Acesse sua conta corporativa</CardDescription>
+          <CardTitle className="text-2xl">Criar conta</CardTitle>
+          <CardDescription>
+            O domínio do seu email deve estar autorizado pela empresa.
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4" noValidate>
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="nome">Nome completo</Label>
+              <Input
+                id="nome"
+                value={nome}
+                onChange={(e) => {
+                  setNome(e.target.value);
+                  if (errors.nome) setErrors({ ...errors, nome: undefined });
+                }}
+                disabled={submitting}
+                maxLength={120}
+                aria-invalid={!!errors.nome}
+              />
+              {errors.nome && <p className="text-xs text-destructive">{errors.nome}</p>}
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="email">Email corporativo</Label>
               <Input
                 id="email"
                 type="email"
@@ -77,19 +94,11 @@ function LoginPage() {
               {errors.email && <p className="text-xs text-destructive">{errors.email}</p>}
             </div>
             <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="password">Senha</Label>
-                <Link
-                  to="/forgot-password"
-                  className="text-xs text-primary hover:underline"
-                >
-                  Esqueci minha senha
-                </Link>
-              </div>
+              <Label htmlFor="password">Senha</Label>
               <Input
                 id="password"
                 type="password"
-                autoComplete="current-password"
+                autoComplete="new-password"
                 value={password}
                 onChange={(e) => {
                   setPassword(e.target.value);
@@ -98,16 +107,18 @@ function LoginPage() {
                 disabled={submitting}
                 aria-invalid={!!errors.password}
               />
-              {errors.password && <p className="text-xs text-destructive">{errors.password}</p>}
+              {errors.password && (
+                <p className="text-xs text-destructive">{errors.password}</p>
+              )}
             </div>
             <Button type="submit" className="w-full" disabled={submitting}>
               {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Entrar
+              Criar conta
             </Button>
             <p className="text-center text-xs text-muted-foreground">
-              Não tem conta?{" "}
-              <Link to="/signup" className="text-primary hover:underline">
-                Criar conta
+              Já tem conta?{" "}
+              <Link to="/login" className="text-primary hover:underline">
+                Entrar
               </Link>
             </p>
           </form>
