@@ -74,22 +74,12 @@ function RootShell({ children }: { children: React.ReactNode }) {
   );
 }
 
-function LoadingBar() {
-  const isLoading = useRouterState({ select: (s) => s.status === "pending" });
-  if (!isLoading) return null;
-  return (
-    <div className="progress-bar">
-      <div className="progress-bar-value" />
-    </div>
-  );
-}
 
 function RootComponent() {
   const [queryClient] = useState(() => new QueryClient());
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <LoadingBar />
         <Outlet />
         <Toaster />
       </AuthProvider>
