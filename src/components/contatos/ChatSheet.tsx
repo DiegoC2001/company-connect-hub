@@ -44,6 +44,8 @@ export function ChatSheet({ open, onOpenChange, contato, userId, empresaId }: Pr
     sendMessage,
     isSending,
   } = useMensagensChat(userId, contato?.id ?? null, empresaId);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isUploading, setIsUploading] = useState(false);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -55,12 +57,47 @@ export function ChatSheet({ open, onOpenChange, contato, userId, empresaId }: Pr
     const v = texto.trim();
     if (!v) return;
     try {
-      await sendMessage(v);
+      await sendMessage({ conteudo: v });
       setTexto("");
     } catch (e) {
       toast.error("Falha ao enviar mensagem", {
         description: e instanceof Error ? e.message : undefined,
       });
+    }
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !userId || !empresaId) return;
+
+    setIsUploading(true);
+    const fileExt = file.name.split(".").pop();
+    const filePath = `${empresaId}/${userId}/${Date.now()}.${fileExt}`;
+
+    try {
+      const { error: uploadError } = await supabase.storage
+        .from("chat-attachments")
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from("chat-attachments")
+        .getPublicUrl(filePath);
+
+      await sendMessage({
+        conteudo: `Arquivo: ${file.name}`,
+        arquivo_url: publicUrl,
+        tipo_arquivo: file.type,
+      });
+
+      toast.success("Arquivo enviado com sucesso");
+    } catch (error) {
+      toast.error("Erro ao enviar arquivo");
+      console.error(error);
+    } finally {
+      setIsUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
     }
   };
 
@@ -114,6 +151,28 @@ export function ChatSheet({ open, onOpenChange, contato, userId, empresaId }: Pr
                         minha ? "bg-primary text-primary-foreground" : "bg-muted text-foreground",
                       )}
                     >
+                      {m.arquivo_url && (
+                        <div className="mb-2">
+                          {m.tipo_arquivo?.startsWith("image/") ? (
+                            <img
+                              src={m.arquivo_url}
+                              alt="Anexo"
+                              className="max-h-48 rounded-md object-contain cursor-pointer hover:opacity-90"
+                              onClick={() => window.open(m.arquivo_url!, "_blank")}
+                            />
+                          ) : (
+                            <a
+                              href={m.arquivo_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-2 underline"
+                            >
+                              <Paperclip className="h-4 w-4" />
+                              Ver anexo
+                            </a>
+                          )}
+                        </div>
+                      )}
                       {m.conteudo}
                     </div>
                     <span className="text-[10px] text-muted-foreground">
@@ -138,15 +197,25 @@ export function ChatSheet({ open, onOpenChange, contato, userId, empresaId }: Pr
               void handleSend();
             }}
           >
-            {/* TODO: implementar upload de arquivo via Supabase Storage (próximo passo) */}
+            <input
+              type="file"
+              ref={fileInputRef}
+              className="hidden"
+              onChange={handleFileUpload}
+            />
             <Button
               type="button"
               variant="ghost"
               size="icon"
-              disabled
-              title="Anexar arquivo (em breve)"
+              disabled={!contato || isSending || isUploading}
+              title="Anexar arquivo"
+              onClick={() => fileInputRef.current?.click()}
             >
-              <Paperclip className="h-4 w-4" />
+              {isUploading ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Paperclip className="h-4 w-4" />
+              )}
             </Button>
             <Input
               value={texto}

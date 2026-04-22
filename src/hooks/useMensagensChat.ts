@@ -72,7 +72,15 @@ export function useMensagensChat(
   }, [userId, contatoId]);
 
   const sendMutation = useMutation({
-    mutationFn: async (conteudo: string) => {
+    mutationFn: async ({
+      conteudo,
+      arquivo_url,
+      tipo_arquivo,
+    }: {
+      conteudo: string;
+      arquivo_url?: string;
+      tipo_arquivo?: string;
+    }) => {
       if (!userId || !contatoId || !empresaId) throw new Error("Dados ausentes");
       const { data, error } = await supabase
         .from("mensagens_chat")
@@ -81,6 +89,8 @@ export function useMensagensChat(
           destinatario_id: contatoId,
           empresa_id: empresaId,
           conteudo,
+          arquivo_url,
+          tipo_arquivo,
         })
         .select()
         .single();
